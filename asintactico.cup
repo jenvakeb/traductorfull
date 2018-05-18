@@ -1,0 +1,132 @@
+ 
+   
+/* ---------------Seccion de declaraciones preliminares--------------------*/
+package ejemplocup;
+
+/* Import the class java_cup.runtime.*  */
+import java_cup.runtime.*;
+import java.io.FileReader;
+   
+/* Codigo del parser, se copia integramente a la clase final.
+    Agregamos el manejo de errores. */
+parser code {:
+    
+    /* Reporte de error encontrado. */
+    public void report_error(String message, Object info) {
+        StringBuilder m = new StringBuilder("Error");
+        if (info instanceof java_cup.runtime.Symbol) {
+            java_cup.runtime.Symbol s = ((java_cup.runtime.Symbol) info);
+            if (s.left >= 0) {                
+                m.append(" in line "+(s.left+1));
+                if (s.right >= 0)
+                    m.append(", column "+(s.right+1));
+            }
+        }
+        m.append(" : "+message);
+        System.err.println(m);
+    }
+   
+    /* Cuando se encuentra un error de donde el sistema no puede
+        recuperarse, se lanza un error fatal. Se despliega el mensaje
+        de error y se finaliza la ejecucion. */
+    public void report_fatal_error(String message, Object info) {
+        report_error(message, info);
+        System.exit(1);
+    }
+
+    /* Metodo main para garantizar la ejecucion del analizador
+       lexico y sintactico, ademas que se pase como parametro la tabla
+       de simbolos correspondiente. */
+    public static void main(String[] args){
+        try {
+            AnalizadorSintactico asin = new AnalizadorSintactico(
+                    new AnalizadorLexico( new FileReader(args[0])));
+            Object result = asin.parse().value;
+            System.out.println("\n*** Resultados finales ***");
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+:};
+   
+
+   
+/* ------------Declaracion de simbolos terminales y no terminales---------- */
+   
+/* Terminales (tokens obtenidos por el analizador lexico).  
+
+   Terminales que no tienen un valor son listados primero, los terminales que
+   tienen un valor como los enteros son listados en la segunda o demas lineas. */
+terminal           SEMI, OP_SUMA, OP_RESTA, OP_MULT, PARENIZQ, PARENDER, 
+                   ART_INDEFI, ART_DEFI, SUS_ABSTRACT, SUS_COMUN, ADJ_POSESIV, ADJ_DEMOS,
+ADJ_CALIFI, ADJ_NUMCARDIN, ADJ_NUMORD, ADJ_PROPERSO, ADJ_PROPOSESIV
+,ADJ_PROREFLEX, ADJ_PROINTERR, PREP_MOD, PREP_LUG, PREP_MOV, PREP_TIEM
+, SIG_PUNT, VERBO_PRESENT, VERBO_PRESENTS, VERBO_PASADOSIMP, VERBO_PASADOPARTICI, CONJ_COORADVERV
+, CONJ_COORCOPU, CONJ_COORDISYU, CONJ_SUBORDISYU, CONJ_SUBORCAUS, CONJ_CONJSUBOCONSEC, 
+CONJ_CONJSUBOCONCES, CONJ_CONJSUBOCOMPARA,
+AUX_PRESEN, AUX_PAS, WEATH, PROF, VEGET, PAIS, ANIMALS, AUXPRESP,
+ AUXPASP, INTERRO, NO, WILL, GOING, AUXPPS, AUXPASPP;
+terminal Integer   ENTERO;
+   
+/* No terminales usados en la seccion gramatical. 
+
+   Primero se lista los no terminales que tienen un valor Object y despues
+   se lista los no terminales que tienen un entero. Un Object se refiere a que
+   no tienen tipo, pudiendo ser entero o String. */
+non terminal Object     expr_list, expr, subverbpre, subverbadj, 
+simplepresentneg, simplepresentint, subverbpas, simplepastint, 
+simplepastneg, futureaf, futureint, futureneg, goingafp, 
+goingintp, goingnegp, goingafpas, 
+goingintpas, goingnegpas, ppsaf, ppint, ppneg, paspaf,
+paspint, paspneg, sub, art, verbop, empty;
+   
+/* ------------------- Seccion de la gramatica ------------------------ */
+   
+/* La gramatica de nuestro analizador.
+   expr_list ::= expr_list;
+*/
+   
+/* 'expr_list' es la raiz de la gramatica. Una 'expr_list' puede ser una 'expr_list'
+   seguida de una expr_part, o puede ser una expr_part.
+   Un terminal o no terminal se define <termino> ::= termino1 termino2 ... terminoN.;
+   donde termino puede ser terminal o no terminal, solo se permite un simbolo a la
+   izquierda. La | sirve para indicar que es una produccion u otra.
+   Debemos pasar de simbolos no terminales a simbolos terminales. Una gramatica que no
+   termina en simbolos terminales se dice que no reduce, y por lo tanto nunca se finaliza
+   su procesado.
+*/
+   expr_list ::= expr_list expr | expr;
+
+   expr ::= subverbpre | subverbadj | simplepresentint | simplepresentneg 
+    | subverbpas | simplepastint | simplepastneg |  futureaf | futureint |
+    futureneg | goingafp | goingintp | goingnegp | goingafpas | goingintpas 
+    | goingnegpas | ppsaf  | ppint | ppneg | paspaf  | paspint | paspneg ;
+   
+   subverbadj ::= art sub verbop ADJ_CALIFI {:System.out.println("SUBVERBADJ");:};
+   subverbpre ::= art sub verbop {:System.out.println("SUBVERBPRE");:};
+   simplepresentint ::= AUXPRESP art sub VERBO_PRESENT INTERRO {:System.out.println("SIMPLEPRESENTINT");:};
+   simplepresentneg ::= art sub AUXPRESP NO VERBO_PRESENT {:System.out.println("SIMPLEPRESENTNEG");:}; 
+   subverbpas ::= art sub VERBO_PASADOSIMP {:System.out.println("SUBVERBPAS");:};
+   simplepastint ::=  AUXPASP art sub VERBO_PRESENT INTERRO {:System.out.println("SIMPLEPASTINT");:};
+   simplepastneg ::= art sub AUXPASP NO VERBO_PRESENT {:System.out.println("SIMPLEPASTNEG");:};
+   futureaf ::= art sub WILL VERBO_PRESENT {:System.out.println("FUTUREAF");:};
+   futureint ::= WILL art sub VERBO_PRESENT INTERRO {:System.out.println("FUTUREINT");:};
+   futureneg ::= art sub WILL NO VERBO_PRESENT {:System.out.println("FUTURENEG");:};
+   goingafp ::= art sub AUX_PRESEN GOING VERBO_PRESENT {:System.out.println("GOINGAFP");:};
+   goingintp ::= AUX_PRESEN art sub GOING VERBO_PRESENT INTERRO {:System.out.println("GOINGINTP");:};
+   goingnegp ::= art sub AUX_PRESEN NO GOING VERBO_PRESENT {:System.out.println("GOINGANEGP");:};
+   goingafpas ::= art sub AUX_PAS GOING VERBO_PRESENT {:System.out.println("GOINGAFPAS");:};
+   goingintpas ::= AUX_PAS art sub GOING VERBO_PRESENT INTERRO {:System.out.println("GOINGINTPAS");:};
+   goingnegpas ::= art sub AUX_PAS NO GOING VERBO_PRESENT {:System.out.println("GOINGANEGPAS");:};
+   ppsaf ::= art sub AUXPPS VERBO_PASADOPARTICI {:System.out.println("PPSAF");:};
+   ppint ::= AUXPPS art sub VERBO_PASADOPARTICI INTERRO {:System.out.println("PPSINT");:};
+   ppneg ::= art sub AUXPPS NO VERBO_PASADOPARTICI {:System.out.println("PPSNEG");:};
+   paspaf ::= art sub AUXPASPP VERBO_PASADOPARTICI {:System.out.println("PASPAF");:};
+   paspint ::= AUXPASPP art sub VERBO_PASADOPARTICI INTERRO {:System.out.println("PASPINT");:};
+   paspneg ::= art sub AUXPASPP NO VERBO_PASADOPARTICI {:System.out.println("PASPNEG");:};
+   sub ::= ADJ_PROPERSO | SUS_ABSTRACT | SUS_COMUN | ANIMALS | PROF;
+   art ::= empty | ART_DEFI;
+   verbop ::= VERBO_PRESENT | VERBO_PRESENTS;
+   empty ::= /* IGNORAR */;
+
+/* EL ARBOL ES IMPLICITO - NO SE MOSTRARÁ */

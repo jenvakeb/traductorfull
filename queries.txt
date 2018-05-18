@@ -1,0 +1,8 @@
+/* CREAR TABLA */
+CREATE TABLE `db_traductor`.`tb_traduccion` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `pal_ingles` VARCHAR(45) NOT NULL,
+  `traduccion` VARCHAR(45) NULL,
+  `categoria` VARCHAR(45) NULL,
+  `hint` VARCHAR(45) NULL,
+  PRIMARY KEY (`id`));
