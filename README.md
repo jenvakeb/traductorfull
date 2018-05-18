@@ -1,0 +1,2 @@
+# traductorfull
+Traductor
